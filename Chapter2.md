@@ -11,13 +11,17 @@ REST(REpresentational State Transfer): Webアプリケーションなどのシ�
 
 データモデル同士の関連付け（１対多の場合）  
 ユーザーが複数のマイクロソフトを持つ  
-```class User < ApplicationRecord  
-  has_many :microposts  
-end```  
-マイクロソフト側の記述  
-```class Micropost < ApplicationRecord  
-  belongs_to :user  
-end```  
+```rb
+class User < ApplicationRecord
+  has_many :microposts
+end
+```  
+マイクロポスト側の記述  
+```rb
+class Micropost < ApplicationRecord
+  belongs_to :user
+end
+```  
   
 ```rails console```でPythonのインタラクティブシェルのようなコードの対話的実行  
  exitで終了（Ctrl+Dでも可）   
