@@ -31,3 +31,8 @@ GETリクエストをhomeアクションに対して発行し、```assert_respon
 assert_select "title", "Home | Ruby on Rails Tutorial Sample App"
 ```  
 <title>タグ内に「Home | Ruby on Rails Tutorial Sample App」という文字列があるかチェックする  
+  
+  
+Guardによってテストを自動実行する```bundle exec guard```  
+これをするための設定や準備はチュートリアルを参照  
+
