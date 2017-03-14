@@ -107,6 +107,44 @@ pushメソッドで引数に指定した要素を配列の末尾に加えるこ�
 範囲は添字として使うことができる。例：```a[0..2]```でa[0],a[1],[2]の範囲の配列を取得できる。  
   
   
+### ハッシュとシンボル  
+ハッシュ=辞書=連想配列  
+ハッシュの定義の仕方その１  
+```rb
+user = {} # 空のハッシュ
+user["first_name"] = "Michael"
+user["last_name"] = "Hartl"
+```
+ハッシュの定義の仕方その２（ハッシュロケット```=>```を使った定義)
+```rb
+user = {"first_name" => "Michael", "last_name" => "Hartl"}
+```
+シンボル...クォートで囲む代わりにコロンが前に置かれる書き方```"name"```は```:name```とも書ける  
+```:foo-bar```や```:2foo```のような書き方はできない(基本的に変数の命名規則と同じ)  
+ハッシュではシンボルをキーで使うことが一般的  
+```rb
+h1 = { :name => "Michael Hartl", :email => "michael@example.com" }
+```
+ハッシュはネストする形でも定義することができる  
+```rb
+params = {}
+params[:user] = { name: "Michael Hartl", email: "mhartl@example.com" }
+```
+配列や範囲オブジェクトと同様にハッシュもeachメソッドを持つ  
+```rb
+flash = { success: "It worked!", danger: "It failed." }
+flash.each do |key, value|
+  puts "Key #{key.inspect} has value #{value.inspect}"
+end
+```
+inspectメソッド...配列などのオブジェクトに対しRailsコンソールで返すような形式で出力する。　　
+```rb
+puts (1..5).to_a.inspect # 出力結果->[1,2,3,4,5]
+puts "hoge".inspect      # 出力結果->"hoge"
+```
+inspectメソッドを使う代わりにp関数を使うことでも同様の出力が可能  
+  
+  
 ### ブロック  
 Rubyにはブロックという範囲や配列に関する機能がある(Pythonでいうリストの内包表記みたいなもの？)  
 ```rb
