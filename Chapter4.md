@@ -115,21 +115,30 @@ user = {} # 空のハッシュ
 user["first_name"] = "Michael"
 user["last_name"] = "Hartl"
 ```
+  
 ハッシュの定義の仕方その２（ハッシュロケット```=>```を使った定義)
 ```rb
 user = {"first_name" => "Michael", "last_name" => "Hartl"}
 ```
+  
 シンボル...クォートで囲む代わりにコロンが前に置かれる書き方```"name"```は```:name```とも書ける  
 ```:foo-bar```や```:2foo```のような書き方はできない(基本的に変数の命名規則と同じ)  
 ハッシュではシンボルをキーで使うことが一般的  
 ```rb
 h1 = { :name => "Michael Hartl", :email => "michael@example.com" }
 ```
+  
+また、```hoge:```のようにコロンを後ろに置くと次のような書き方でハッシュを書くことができる  
+```rb
+h1 = {name: "Micael Hartl", email: "micahel@example.com"}
+```
+  
 ハッシュはネストする形でも定義することができる  
 ```rb
 params = {}
 params[:user] = { name: "Michael Hartl", email: "mhartl@example.com" }
 ```
+  
 配列や範囲オブジェクトと同様にハッシュもeachメソッドを持つ  
 ```rb
 flash = { success: "It worked!", danger: "It failed." }
@@ -137,12 +146,21 @@ flash.each do |key, value|
   puts "Key #{key.inspect} has value #{value.inspect}"
 end
 ```
+  
 inspectメソッド...配列などのオブジェクトに対しRailsコンソールで返すような形式で出力する。　　
+すなわち、オブジェクトを人が読める形にした文字列を返すもの。
 ```rb
 puts (1..5).to_a.inspect # 出力結果->[1,2,3,4,5]
 puts "hoge".inspect      # 出力結果->"hoge"
+puts nil.inspect         #        ->"nil"
 ```
+  
 inspectメソッドを使う代わりにp関数を使うことでも同様の出力が可能  
+  
+ハッシュのmergeメソッドでキーが重複する場合、ブロックでの指定がなければ引数の値で更新される  
+```rb
+{ "a" => 100, "b" => 200 }.merge({ "b" => 300 }) # {"a" => 100, "b" => 300}
+```
   
   
 ### ブロック  
