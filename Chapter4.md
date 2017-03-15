@@ -228,7 +228,7 @@ h = Hash.new #配列のように引数を取ることはできない
 "".class.superclass # =>Object
 ```
   
-####継承の書き方  
+**継承の書き方**  
 自身の文字列の回文を調べるクラスの例  
 ちなみにself.reverseのような例ではselfを省略できる
 ```rb
@@ -243,3 +243,54 @@ Stringを継承しているので引数に文字列を指定してインスタ�
 w = Word.new("hoge")
 w.palindrome?
 ```
+  
+組み込みクラスにメソッドを拡張することもできる  
+```rb
+class String
+  def palindrome?
+    self == reverse
+  end
+end
+```
+  
+**コントローラクラス**  
+Railsのコントローラ(クラス)のアクション(メソッド)には戻り値が存在しない  
+アクションはWebページを表示するものであるため。  
+  
+**アクセサー**
+属性(attribute)に対してgetterとsetterを定義   
+```rb
+class User
+  attr_accessor :name, :email
+end
+```
+  
+**インスタンス変数のinitializeメソッド**
+initializeメソッドはnewメソッドでインスタンスが生成されるときに呼び出される  
+```rb
+class User
+  attr_accessor :name, :email
+  
+  def initialize(attributes = {})
+    @name = attributes[:name]
+    @email = attributes[:email]
+  end
+end
+```
+このinitializeメソッドは空のハッシュを１つ引数に取っている  
+引数のハッシュに何も入っていなければ@nameにも@emailにもnilが入ることになる  
+このようにアトリビュートアクセサを設定することで```インスタンス名.name```のように  
+外部からインスタンス変数の参照や変更ができるようになる
+  
+クラスをコンソールなどで読み込みたい場合はrequireを使う  
+カレントディレクトリはアプリケーションのルートディレクトリとなる  
+```rb
+require './example_user' # example_user.rbの中のクラスを読み込みたい場合
+```
+  
+実際にインスタンス生成時にinitializeの引数にハッシュを与えてみる  
+```rb
+user = User.new(name:"hoge", email:"hoge@example.com")
+```
+最後の引数がハッシュなら波括弧を省略できる  
+このようにハッシュ引数を使ってオブジェクトを初期化する方法をマスアサイメント(mass assignment)と呼ぶ。 
