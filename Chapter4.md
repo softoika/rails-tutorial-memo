@@ -162,6 +162,15 @@ inspectメソッドを使う代わりにp関数を使うことでも同様の出
 { "a" => 100, "b" => 200 }.merge({ "b" => 300 }) # {"a" => 100, "b" => 300}
 ```
   
+関数呼び出しにおいて、最後の引数がハッシュの場合には波括弧を省略できる  
+```rb
+# 最後の引数がハッシュの場合、波かっこは省略可能。
+stylesheet_link_tag 'application', { media: 'all',
+                                     'data-turbolinks-track': 'reload' }
+stylesheet_link_tag 'application', media: 'all',
+                                   'data-turbolinks-track': 'reload'
+```
+  
   
 ### ブロック  
 Rubyにはブロックという範囲や配列に関する機能がある(Pythonでいうリストの内包表記みたいなもの？)  
@@ -192,4 +201,45 @@ test "test hogehoge" do
   #テスト内容
 end
 ```
-
+  
+  
+### Rubyにおけるクラス  
+文字列を使うと文字列のインスタンスが自動的に作成される(リテラルコンストラクタ)  
+オブジェクトからclassメソッドを呼び出すと元のクラスを確認できる  
+```rb
+s = "foobar"
+s.class      # => String
+```
+newメソッドを使うことで明示的なインスタンス生成ができる  
+```rb
+s = String.new("foobar") # 文字列の名前付きコンストラクタ
+```
+配列の場合  
+```rb
+a = Array.new([1,2,3])
+```
+ハッシュの場合  
+```rb
+h = Hash.new #配列のように引数を取ることはできない
+```
+  
+クラスに対し、superclassメソッドを使うことで親クラスを調べることができる
+```rb
+"".class.superclass # =>Object
+```
+  
+####継承の書き方  
+自身の文字列の回文を調べるクラスの例  
+ちなみにself.reverseのような例ではselfを省略できる
+```rb
+class Word < String
+  def palindrome?
+    self == self.reverse
+  end 
+end
+```
+Stringを継承しているので引数に文字列を指定してインスタンスを生成できる  
+```rb
+w = Word.new("hoge")
+w.palindrome?
+```
