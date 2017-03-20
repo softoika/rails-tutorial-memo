@@ -29,4 +29,79 @@ navタグには「その内側がナビゲーションリンクである」と�
   
 erbでリンクを生成するにはRailsヘルパーの```link_to```を使用する  
 ```link_to```の第一引数はリンクテキスト、第二引数はURL  
-第３引数はオプション引数となっていて、ハッシュを引数に取る。  
+第３引数はオプション引数となっていて、ハッシュを引数に取る。ハッシュを引数に取ることで柔軟にHTMLタグのオプションに対応することができる。  
+例えば次のような埋め込みRubyによる記述は  
+```rb
+<%= link_to "Sign up now!", "#", class: "btn btn-lg btn-primary" %>
+```
+このようなリンクタグを生成する
+```html
+<a href="#" class="btn btn-lg btn-primary">Sign up now!</a>
+```  
+  
+画像を使いたい場合はlink_toとimage_tagを使う
+次のように書く  
+```rb
+<%= link_to image_tag("rails.png", alt: "Rails logo"), "http://rubyonrails.org" %>
+```
+link_toの第一引数にimage_tagが与えられている  
+この埋め込みRubyは次のHTMLタグの記述に等しい
+```html
+<a href="http://rubyonrails.org"><img src="rails.png" alt="Rails logo"></a>
+```
+このようにlink_toの第一引数にimage_tagなどのヘルパーを取ることで入れ子のタグ構造を再現することができる  
+image_tagの```alt: "Rails logo"```もオプションハッシュとなっている  
+  
+また、表示に使う画像はapp/assets/imagesに置く。ここに置いたものがimage_tagで使われている  
+  
+  
+### BootstrapとカスタムCSS  
+BootstrapとはTwitter社が公開しているオープンソースのWebデザインフレームワーク  
+Bootstrapを使用すると、洗練されたWebデザインとユーザーインターフェイス要素を簡単にHTML5アプリケーションに追加することができる  
+Bootstrapを使うことでアプリケーションをレスポンシブウェブデザイン(スマホやPCなど様々なデバイスに最適化できるデザイン)にできる  
+railsにBootstrapを適用させるにはgemファイルに以下を追加する(必要に応じてバージョンを記述する)  
+```
+gem 'bootstrap-sass', '3.3.6'
+```
+  
+カスタムCSSはapp/assets/stylesheetsディレクトリに.scssのファイルを置くことで使うことができる  
+scssはSass(Sassy CSS)と呼ばれるCSSを拡張した言語　Sassを処理できる  
+次のようにカスタムCSSの@importを使うことでBootstrapを使うことができる  
+```
+@import "bootstrap-sprockets";
+@import "bootstrap";
+```
+  
+HTMLファイルにclassオプションを加えることでBootstrapのデザインを指定できる  
+例えば  
+```html
+<header class="navbar navbar-fixed-top navbar-inverse">
+```
+や  
+```html
+<div class="container"
+```
+のように。
+  
+ちなみにcssは適用対象にクラス、ID、HTMLタグまたはその組み合わせを指定できる  
+クラスを対象とする場合、クラス名の先頭にドット「.」を付ける  
+例:
+```css
+.center {text-align:center;}
+```
+IDの場合は「.」の代わりに「#」を先頭に付ける  
+同じページに一度しか使わない場合にIDを用いる  
+また、IDを使う利点としては、一度しか使われないというメッセージ性を付与することができる以外に、ページ内ジャンプに使うこともできる  
+たとえば  
+```html
+<a href="#footer">ページ末尾へ</a>
+```
+で  
+```html
+<div id="footer">
+.
+.
+.
+</div>
+```
+の部分に飛ぶことができる　　
