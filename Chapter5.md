@@ -31,7 +31,7 @@ erbでリンクを生成するにはRailsヘルパーの```link_to```を使用�
 ```link_to```の第一引数はリンクテキスト、第二引数はURL  
 第３引数はオプション引数となっていて、ハッシュを引数に取る。ハッシュを引数に取ることで柔軟にHTMLタグのオプションに対応することができる。  
 例えば次のような埋め込みRubyによる記述は  
-```rb
+```erb
 <%= link_to "Sign up now!", "#", class: "btn btn-lg btn-primary" %>
 ```
 このようなリンクタグを生成する
@@ -41,7 +41,7 @@ erbでリンクを生成するにはRailsヘルパーの```link_to```を使用�
   
 画像を使いたい場合はlink_toとimage_tagを使う
 次のように書く  
-```rb
+```erb
 <%= link_to image_tag("rails.png", alt: "Rails logo"), "http://rubyonrails.org" %>
 ```
 link_toの第一引数にimage_tagが与えられている  
@@ -115,4 +115,83 @@ renderというヘルパーを用いて実現する
 ```
 この例では```app/views/layouts/_hoge.html.erb```というファイルから省略されている記述が挿入される  
 このようにパーシャルとして使われるファイルの名前には先頭に「_」を付ける命名規則がある  
+  
+  
+### アセットパイプライン  
+<dl>
+  <dt>Sass</dt><dd>CSS生成ツール</dd>
+  <dt>アセットパイプライン</dt><dd>静的コンテンツ(画像,CSS,JSなど)の管理を強化するツール</dd>
+</dl>
+  
+**アセットディレクトリ**
+アプリケーション固有の```app/assets```  
+チーム固有の```lib/assets```  
+サードパーティ製の```vendor/assets```  
+この3つのディレクトリが存在する  
+  
+**マニフェストファイル**  
+アセットディレクトリに配置された静的コンテンツ(アセット)をどのように１つにまとめるかを記述するもの  
+アプリケーション固有のマニフェストファイル```app/assets/stylesheets/application.css```には次のような記述がある  
+```
+ *= require_tree .
+```
+これは```app/assets/stylesheets/```ディレクトリ中のすべてのCSSをアプリケーションに含めることを示している  
+```
+ *= require_self
+```
+これはapplication.css自身もアプリケーションに含めることを示している  
+Javascriptのスクリプトファイルについても同様に１つにまとめられる(javascritps.js)  
+  
+アセットパイプラインで１つのファイルに結合することで実行時の効率性が上がる  
+  
+  
+## Sassによる拡張されたCSS  
+```.scss```という拡張子をもつ  
+　　
+Sass特有の書き方  
+**ネスト**
+SassはCSSの記述をネストして書ける  
+```scss
+.center {
+  text-align: center;
+  h1 {
+    margin-bottom: 10px;
+  }
+}
+```
+h1は.centerのルールを継承している  
+次のCSSの場合、一回目はlogo自身のルール、二回目はhover属性のルールを定義している  
+```css
+#logo {
+ .
+ .
+ .
+}
+#logo:hover {
+  color: #fff;
+  text-decoration: none;
+}
+```
+2つ目のルールをネストするには「&」を使う  
+```scss
+#logo {
+  .
+  .
+  .
+  &:hover {
+    color: #fff;
+    text-decoration: none
+  }
+}
+```
 
+**変数**  
+Sassでは変数を使うこともできる  
+```scss
+$light-gray: #777;
+h2 {
+  color: $light-gray;
+}
+```
+また、Bootstrapでは[LESS変数](http://getbootstrap.com/customize/#less-variables)が用意されている  
+これを使うにはbootstrap-sassのgemを入れていて、通常の変数と同様に「$」を付けて使用すればいい
