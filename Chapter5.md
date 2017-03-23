@@ -195,3 +195,75 @@ h2 {
 ```
 また、Bootstrapでは[LESS変数](http://getbootstrap.com/customize/#less-variables)が用意されている  
 これを使うにはbootstrap-sassのgemを入れていて、通常の変数と同様に「$」を付けて使用すればいい
+  
+  
+### レイアウトのリンク  
+リンクの書き方は通常の  
+```html
+<a href="/static_pages/about">About</a>
+```
+とする以外にも  
+```erb
+<%= link_to "About", about_path %>
+```
+とする方法がある(Railsでは後者が主流)  
+about_pathを変数にすることでパスの変更に対してabout_pathの定義を変えるだけで一括変更できる  
+  
+名前付きルート  
+デフォルトのルーティングは次のように書く  
+```rb
+get 'static_pages/help'
+```
+しかし、次のように名前付きルートを用いると  
+```rb
+get '/help', to: 'static_pages#help'
+```
+/helpにリクエストが飛んだときにhelpアクションを実行し、help.html.erbが表示される  
+こうすることで```help_path```は```'/help'```となり、  
+```help_url``は```'http://hogehoge.com/help'```となる。  
+また、  
+```rb
+get '/help', to: 'static_pages#help', as: 'xxx'
+```
+とすることで、help_pathとhelp_urlはxxx_pathとxxx_urlに名前が変わる  
+このように名前付きルートをroutes.rbで定義することで先程のRails式リンクが書けるようになる  
+```erb
+<%= link_to "About", about_path %>
+```
+  
+  
+**リンクのテスト**  
+正しくリンクが機能しているかを確かめるには統合テスト(Integration Test)を使う  
+次のように```site_layout```というテンプレートを作る方法がある  
+```$ rails generate integration_test site_layout```  
+すると```/test/integration/site_layout_test.rb```ができる  
+  
+ここでテストしたいのは  
+1. ルートURL(Home)にGETリクエストを送る  
+2. 正しいページテンプレートが描画されてるか確かめる  
+3. Home, About, Contact, Helpのリンクが正しく動くか確かめる  
+  
+1.は```get root_path```  
+2.は```assert_template```メソッドを使う  
+```rb
+assert_template 'static_pages/home'
+  
+```
+3.は```assert_select```メソッドを使う  
+```rb
+assert_select "a[href=?]", about_path
+```
+特定のリンクが存在するかをaタグとhref属性を使って調べている  
+上記のコードではRailsは「?」を自動的にabout_pathに置換している。これにより次のようなHTMLがあるかチェックする  
+```html
+<a href="/about">...</a>
+```
+同じページ内に同じ場所へのリンクが２つ以上ある場合は  
+```rb
+assert_select "a[href=?]", root_path, count: 2
+```
+のように設定する
+  
+統合テストを指定したテストの実行方法は  
+```$ rails test:integration```  
+
