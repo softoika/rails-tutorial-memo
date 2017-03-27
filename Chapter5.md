@@ -149,7 +149,7 @@ Javascriptのスクリプトファイルについても同様に１つにまと�
 ```.scss```という拡張子をもつ  
 　　
 Sass特有の書き方  
-**ネスト**
+**ネスト**  
 SassはCSSの記述をネストして書ける  
 ```scss
 .center {
@@ -209,7 +209,7 @@ h2 {
 とする方法がある(Railsでは後者が主流)  
 about_pathを変数にすることでパスの変更に対してabout_pathの定義を変えるだけで一括変更できる  
   
-名前付きルート  
+**名前付きルート**  
 デフォルトのルーティングは次のように書く  
 ```rb
 get 'static_pages/help'
@@ -266,4 +266,25 @@ assert_select "a[href=?]", root_path, count: 2
   
 統合テストを指定したテストの実行方法は  
 ```$ rails test:integration```  
+  
+  
+### Usersコントローラの作成  
+Webサイトでユーザ登録を行えるようにするためにUsersコントローラを作成する。  
+次のように```rails generate```を用いて生成する  
+```
+$ rails generate controller Users new
+```
+ここで引数に指定されているnewはRailsで好まれているRESTアーキテクチャの規約に従って追加されたものである。  
+(新規ユーザ用のアクションを```new```としている)  
+このコマンドで生成されるファイルは```app/controllers/users_controller.rb```でファイル内容は  
+```rb
+class UsersController < ApplicationController
+
+  def new
+  end
+end
+```
+である。  
+```app/views/users```にはnewアクションのビューとして、```new.html.erb```が生成されている。  
+Usersページ用の簡単なテストも```test/controllers/users_controller_test.rb```が生成されている。
 
