@@ -74,3 +74,74 @@ $ rails db:rollback
 >> user.update_attributes(name:"aaa", email:"bbb@ccc.com")
 ```
 このメソッドもcreateと同様に保存を一括して行う  
+  
+　  
+### ユーザーの検証  
+ユーザ名は空であってはいけない、メールは重複してはいけないのようにそれぞれの属性が条件に合致しているか確認する必要がある  
+Active Recordでは検証(Validation)という機能により制約を課すことができる  
+検証においてよく使われるケース→存在性の検証、長さの検証、フォーマットの検証、一意性の検証。
+  
+**有効性の検証**  
+具体的なテスト方法としては、まず有効なモデルのオブジェクトを作成し、その属性のうち１つを有効でない属性に変更する  
+そしてバリデーションで失敗するか確かめる  
+念のため最初に作成時の状態でもテストして有効かどうか確認する。こうするとバリデーションのテストが失敗したとき、バリデーションの実装に問題があったかオブジェクトに問題が合ったか確認できる  
+　　
+モデルのテストなので```rails generate```で作成した```test/models/user_test.rb```に書く  
+```rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+
+  def setup
+    @user = User.new(name: "Example User", email: "user@example.com")
+  end
+
+  test "should be valid" do
+    assert @user.valid?
+  end
+end
+```
+```setup```という特殊なメソッドを使ってUserオブジェクトを作成する。```setup```はテストの実行前に実行される  
+インスタンス変数```@user```を使うことでUserオブジェクトに対しテストすることができる  
+assertメソッドは返ってくる値がtrueであれば成功し、falseだと失敗する  
+  
+モデルのみのテストは  
+```
+$ rails test:models
+```
+で実行できる  
+```"should be valid"```のテストはUserモデルにバリデーションを定義していないのでテストは通る  
+  
+  
+### 存在性の検証 
+渡された属性が存在するかを検証する  
+例えばユーザにnameとemailの両方が存在するか  
+  
+まず、name属性のバリデーションに対するテストを書く  
+例えば```user_test.rb```に次のようなテストを追加する  
+```rb
+test "name should be present" do
+  @user.name = "   "
+  assert_not @user.valid?
+end
+```
+assert_notはassertと逆で、falseを返すときに成功する  
+この場合、"   "の名前の名前が有効でない(false)と返ってきたら成功になる  
+次に```user.rb```のモデルにバリデーションを記述する  
+```rb
+class User < ApplicationRecord
+  validates :name, presence: true
+end
+```
+validatesメソッドの詳細に関しては後ほど？  
+  
+ユーザオブジェクトを生成すると、ユーザオブジェクトからvalid?メソッドを呼び出して有効かどうか調べることができる  
+またerrorsオブジェクトでエラーメッセージを確認することもできる  
+```
+>> user.errors.full_messages
+=> ["Name cant be blank"]
+```
+有効でない状態でデータベースに保存しようとしても失敗する→```save```メソッド  
+  
+emailに関する存在性の検証も同様に実装する  
+
