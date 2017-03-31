@@ -125,18 +125,18 @@ test "name should be present" do
   assert_not @user.valid?
 end
 ```
-assert_notはassertと逆で、falseを返すときに成功する  
-この場合、"   "の名前の名前が有効でない(false)と返ってきたら成功になる  
+```assert_not```は```assert```と逆で、```false```を返すときに成功する  
+この場合、```"   "```の名前が有効でない(```false```)と返ってきたら成功になる  
 次に```user.rb```のモデルにバリデーションを記述する  
 ```rb
 class User < ApplicationRecord
   validates :name, presence: true
 end
 ```
-validatesメソッドの詳細に関しては後ほど？  
+```validates```メソッドの詳細に関しては後ほど？  
   
-ユーザオブジェクトを生成すると、ユーザオブジェクトからvalid?メソッドを呼び出して有効かどうか調べることができる  
-またerrorsオブジェクトでエラーメッセージを確認することもできる  
+ユーザオブジェクトを生成すると、ユーザオブジェクトから```valid?```メソッドを呼び出して有効かどうか調べることができる  
+また```errors```オブジェクトでエラーメッセージを確認することもできる  
 ```
 >> user.errors.full_messages
 => ["Name cant be blank"]
@@ -144,4 +144,25 @@ validatesメソッドの詳細に関しては後ほど？
 有効でない状態でデータベースに保存しようとしても失敗する→```save```メソッド  
   
 emailに関する存在性の検証も同様に実装する  
+  
+　  
+### 長さの検証  
+nameとemailに関して最大文字数のテストをする(```user_test.rb```)  
+```rb
+ "name should not be too long" do
+    @user.name = "a" * 51
+    assert_not @user.valid?
+  end
 
+  test "email should not be too long" do
+    @user.email = "a" * 244 + "@example.com" # 256文字
+    assert_not @user.valid?
+  end
+```
+文字数を制限する処理を書いていないので```@user.valid?```はtrueを返す(テスト失敗)  
+次のように```user.rb```の```validates```メソッドを変更する  
+```rb
+  validates :name,  presence: true, length: { maximum: 50 }
+  validates :email, presence: true, length: { maximum: 255 }
+```
+```presence:```以降がオプションハッシュになっていて、```length:```の値もハッシュとなっている。
