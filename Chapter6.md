@@ -149,7 +149,7 @@ emailに関する存在性の検証も同様に実装する
 ### 長さの検証  
 nameとemailに関して最大文字数のテストをする(```user_test.rb```)  
 ```rb
- "name should not be too long" do
+  test "name should not be too long" do
     @user.name = "a" * 51
     assert_not @user.valid?
   end
@@ -166,3 +166,58 @@ nameとemailに関して最大文字数のテストをする(```user_test.rb```)
   validates :email, presence: true, length: { maximum: 255 }
 ```
 ```presence:```以降がオプションハッシュになっていて、```length:```の値もハッシュとなっている。
+  
+　  
+### フォーマットの検証  
+emailのフォーマットがuser@example.comの形式を取っているか検証する  
+メールアドレスのバリデーションは扱いが難しく、エラーが発生しやすい  
+よって有効なメールアドレスと無効なメールアドレスをいくつか用意して、バリデーション内のエラーを検知していく  
+まずは有効なメールアドレスのテストとして、```user_test.rb```に次のようなテストを追加する  
+```rb
+  test "email validation should accept valid addresses" do
+
+  valid_addresses = %w[user@example.com USER@foo.COM A_US-ER@foo.bar.org
+                         first.last@foo.jp alice+bob@baz.cn]
+
+  valid_addresses.each do |valid_address|
+    @user.email = valid_address
+    assert @user.valid?, "#{valid_address.inspect} should be valid"
+  end
+
+end
+```
+```valid_addresses```にメールアドレスの文字列リストを作成し、それぞれのメールアドレスに対して検証をする  
+assertメソッドの第二引数は検証に失敗したときのメッセージを文字列として渡している  
+文字列に埋め込まれている```valid_address.inspect```は文字列オブジェクトとしてのvalid_addressの文字列表現が入る  
+  
+次に無効なメールアドレスに関してもテストを作成する  
+```rb
+  test "email validation should reject invalid addresses" do
+    invalid_addresses = %w[user@example,com user_at_foo.org user.name@example.
+                           foo@bar_baz.com foo@bar+baz.com]
+    invalid_addresses.each do |invalid_address|
+      @user.email = invalid_address
+      assert_not @user.valid?, "#{invalid_address.inspect} should be invalid"
+    end
+  end
+```
+この時点でテストをして、失敗することを確認する。1つ目のvalid_addressesに関するテストは成功するがinvalid_addressesの方は失敗する  
+  
+メールアドレスのフォーマットを検証するには  
+```rb
+validates :email, format: { with: /<regular expression>/ }
+```
+のように正規表現を含んだ```format:```を引数に与える必要がある  
+正規表現の動作を確認するには[Rebular](http://www.rubular.com/)というサイトがおすすめ。  
+正規表現のルールに対しどんな文字列がマッチするか対話的に確認することができる  
+   
+実際のメールアドレスの正規表現は実戦で堅牢性が保証されているものを流用する  
+```user.rb```にフォーマットのバリデーションを追加する  
+```rb
+VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
+validates :email, presence: true, length: { maximum: 255 },
+                    format: { with: VALID_EMAIL_REGEX }
+```
+ 
+
+
