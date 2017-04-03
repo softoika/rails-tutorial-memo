@@ -218,6 +218,88 @@ VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
 validates :email, presence: true, length: { maximum: 255 },
                     format: { with: VALID_EMAIL_REGEX }
 ```
- 
+  
+　  
+### 一意性の検証  
+validatesメソッドの:uniqueオプションを使うことで可能。  
+ここではメールアドレスをユーザ名として使うために他のユーザと被らないよう一意性を検証する  
+  
+一意性を検証するためには、データのオブジェクトをnewメソッドで生成してテストする方法では検証できない。  
+そのためレコードをデータベースに登録する必要がある  
+```user_test.rb```に次のテストメソッドを追加する  
+```rb
+  test "email addresses should be unique" do
+    duplicate_user = @user.dup
+    @user.save
+    assert_not duplicate_user.valid?
+  end
+```
+```@user.dup```というメソッドを使っているが、これは同じ属性を持つデータを複製するためのメソッド。  
+@userが生成され、```save```メソッドで保存された後では、複製されたユーザが既存の(データベースに保存された)ユーザと同じメールアドレスを持つため、複製された```duplicate_user```の作成は無効になるはず(```duplicate_user.valid?```)
+  
+このテストをパスするために、emailのバリデーションに```uniqueness: true```のオプションを追加する  
+```rb
+validates :email, presence: true, length: {maximum: 255},
+    format: { with: VALID_EMAIL_REGEX },
+    uniqueness: true
+```
+これでテストはパスするが、メールアドレスには大文字小文字が区別されないという特徴がある。  
+そのため、foo@bar.comとFoo@BAr.comのような場合にも重複していると判断しなければならない。  
+先程の```test "email addresses should be unique"```のテストメソッドを次のように変更する  
+```rb
+  test "email addresses should be unique" do
+    duplicate_user = @user.dup
+    duplicate_user.email = @user.email.upcase
+    @user.save
+    assert_not duplicate_user.valid?
+  end
+```
+upcaseで@userの"user@example.com"は"USER@EXAMPLE.COM"となり(duplicate_userのメールアドレスは小文字のまま)、これが無効と判断されればテストが通る  
+:uniquenessでは:case_sensitiveのオプションをfalseにすることで大文字小文字を区別しないようにできる  
+```rb
+validates :email, presence: true, length: {maximum: 255},
+    format: { with: VALID_EMAIL_REGEX },
+    uniqueness: {case_sensitive: false}
+```
 
+**Webサイトのトラフィック上で起こるデータの重複**  
+トラフィックが多いとき送信ボタンを2回連続で押すなどした場合に、最初のリスエストの保存が終わる前に次のリクエストの同じメールアドレスによるユーザの作成ができてしまい、重複したユーザーレコードの生成が可能になってしまうことがある。  
+これを解決するにはemailのカラムにインデックスを追加し、そのインデックスが一意であるようにすればいい  
+なぜなら、重複しているか調べるためには１つ１つのレコードのemail属性を探索する必要があり非効率（全表スキャン(Full-table Scan))  
+emailカラムにインデックスを追加することで索引から探すことができるようになり、テーブルの全てのレコードを探す必要がなくなる  
+今回は既に存在するモデルに構造を追加するのでmigrationジェネレーターを使用して直接マイグレーションを作成する必要がある    
+```
+$ rails g migration add_index_to_users_email
+```
+次に生成されたマイグレーションファイルのchangeメソッドにインデックス作成の定義を追加する(```db/migrate/[timestamp]_add_index_to_users_email.rb```)  
+```rb
+  def change
+    add_index :users, :email, unique: true
+  end
+```
+このメソッド内ではusersテーブルのemailカラムにインデックスを追加するためのadd_indexというメソッドを使っている  
+オプションで```unique: true```とすることでインデックスの一意性を強制できる  
+最後にデータベースをマイグレートする  
+```
+$ rails db:migrate
+```
+この時点では、テスト用のDBにサンプルデータが含まれ、サンプルデータに一意性が保たれていないため、テストは失敗する(サンプルデータは```test/fixtures/users.yml```に定義されている)  
+よってusers.ymlの中のサンプルデータの記述をすべて削除する必要がある(削除するとテストは通る)  
+  
+**データベースのアダプタが大文字小文字区別するインデックスを使っているとは限らない問題**  
+例えばFoo@ExAMPle.Comとfoo@example.comが別々の文字と解釈するデータベースがある  
+これを避けるために、データベースに保存する前にすべて小文字に変換しておくという方法をとる。  
+実装にはActiveRecordのコールバックメソッドを使う。  
+オブジェクトがsaveされる前に処理を追加したいので```before_save```というコールバックを使う  
+```user.rb```の次の一行を追加する  
+```rb
+class User < ApplicationRecord
+  before_save {self.email = email.downcase}
+  .
+  .
+  .
+end
+```
+ここではbefore_saveコールバックにブロックを渡してメールアドレスの設定を行っている。
+ちなみに```self.email.downcase```のselfは省略できるが```self.email```は省略できない(後ほど詳しく解説される)  
 
