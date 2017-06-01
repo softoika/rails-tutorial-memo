@@ -302,4 +302,109 @@ end
 ```
 ここではbefore_saveコールバックにブロックを渡してメールアドレスの設定を行っている。
 ちなみに```self.email.downcase```のselfは省略できるが```self.email```は省略できない(後ほど詳しく解説される)  
+  
+### ハッシュ化されたパスワード  
+```
+has_secure_password
+```
+このメソッド呼び出しをUsersモデルのクラスに書くだけでハッシュにより暗号化されたパスワードを使うことができる  
+さらにパスワード登録時の２回書く確認や存在性と２回の値が一致するかのバリデーションもできるようになる  
+authenticateという引数の文字がパスワードと一致するとUsersオブジェクトを間違っていると判定するメソッドも使えるようになる  
+  
+ただし、```has_secure_password```を使うにはモデルに```password_digest```という属性を持っている必要がある  
+すなわち、Usersを次のようなデータモデルにする必要がある  
+  
+| 属性                 | 型         |  
+|:--------------------|:-----------|  
+| id                  | integer    |  
+| name                | string     |  
+| email               | string     |  
+| created_at          | datetime   |  
+| updated_at          | datetime   |  
+| **password_digest** | **string** |  
+  
+  
+この属性を追加するために以下のコマンドを実行する  
+```
+$ rails generate migration add_password_digest_to_users password_digest:string
+```
+add_password_digest_to_usersはマイグレーション名  
+to_usersを追加することによってusersテーブルにカラムを追加するマイグレーションが自動生成される  
+```
+$ rails db:migrate
+```
+これでマイグレーションが反映される  
+　　  
+また、パスワードをハッシュ化するために最先端のハッシュ関数である```bcrypt```が必要  
+次のようにGemfileに追記する  
+```rb
+gem 'bcrypt',         '3.1.11'
+```
+```
+$ bundle install
+```
+has_secure_passwordは使えるようになったがこの状態のままではテストに失敗する  
+テストで使用しているUsersオブジェクトにpasswordとpassword_confirmationが追加されていなく、バリデーションが効いているからだ  
+なのでUsersTest.rbのsetupメソッドを次のように変更する  
+```rb
+  def setup
+    @user = User.new(name: "Example User", email: "user@example.com",
+                     password: "foobar", password_confirmation: "foobar")
+  end
+```  
+  
+### パスワードの最小文字数
+まずパスワードの最小文字数が６文字以上でパスするテストを書く  
+```rb   
+test "password should be present (nonblank)" do
+  @user.password = @user.password_confirmation = " " * 6
+  assert_not @user.valid?
+end
 
+test "password should have a minimum length" do
+  @user.password = @user.password_confirmation = "a" * 5
+  assert_not @user.valid?
+end
+```
+ここでは多重代入という書き方を使っている  
+```rb
+@user.password_confirmation = "a" * 5
+@user.password = @user_password_confirmation
+```
+という書き方が  
+```rb
+@user.password = @user.password_confirmation = "a" * 5
+```
+と書ける  
+最小文字数のバリデーションは次のように追加する  
+```rb
+validates :password, length: { minimum: 6 }
+```
+他の属性と同様に```presence: true```を渡すことで存在性の検証も通る  
+```rb
+validates :password, presence: true, length: { minimum: 6 }
+```
+  
+### ユーザーの作成と認証  
+rails consoleでユーザーの作成および認証を試してみる  
+```
+$ rails console 
+```
+```rb
+>> User.create(name: "Michael Hartl", email: "mhartl@example.com",
+?>             password: "foobar", password_confirmation: "foobar")
+```
+```rb
+>> user = User.find_by(email: "mhartl@example.com")
+>> user.password_digest
+```
+password_digestはハッシュの文字列で表現していて、bcryptで暗号化されているため、元のパスワードを算出することは困難  
+そこでauthenticateメソッドを用いることでパスワードの認証をすることができる  
+```rb
+>> user.authenticate("not_the_right_password")
+false
+>> user.authenticate("foobar")
+【userオブジェクトが返ってくる】
+>> !!user.authenticate("foobar")
+true
+```
