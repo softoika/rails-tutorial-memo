@@ -215,3 +215,103 @@ aside {
   margin-top: 15px;
 }
 ```
+### 7.2 ユーザ登録フォーム  
+ユーザ登録用のページを作る  
+メールアドレスとユーザ名とパスワード、パスワードの確認欄を設ける  
+  
+#### 7.2.1 form_for
+入力欄として用いるフォーム用にRailsのform_forヘルパーメソッドを用いる  
+form_forではActive Recordのオブジェクトを取り込み、そのオブジェクトの属性をつかってフォームを構築するようにする。  
+  
+ところでユーザ登録のルーティングはnewアクションに紐付けられていた  
+app/config/routes.rb  
+```rb
+  get '/signup' to: 'users#new'
+```
+form_forで必要となるuserオブジェクトの作成をnewアクションでする  
+app/controllers/user_controller.rb  
+```rb
+  def new
+    @user = User.new
+  end
+```
+  
+formそのものはviewに書く  
+app/views/users/new.html.erb  
+```erb
+<% provide(:title, 'Sign up') %>
+<h1>Sign up</h1>
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_for(@user) do |f| %>
+      <%= f.label :name %>
+      <%= f.text_field :name %>
+<%= f.label :email %>
+      <%= f.email_field :email %>
+<%= f.label :password %>
+      <%= f.password_field :password %>
+<%= f.label :password_confirmation, "Confirmation" %>
+      <%= f.password_field :password_confirmation %>
+<%= f.submit "Create my account", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+```
+```form_for(@user) do |f|```のfオブジェクトはHTMLフォーム要素 (テキストフィールド、ラジオボタン、パスワードフィールドなど) に対応するメソッドが呼び出されると、@userの属性を設定するために特別に設計されたHTMLを返す。  
+つまり、  
+```erb
+<%= f.label :email %>
+<%= f.email_field :email %>
+```
+この記述はUserモデルのname属性を設定する、ラベル付きテキストフィールド要素を作成するのに必要なHTMLを作成する(生成されたページのページソースを見てみる)  
+```erb
+<%= f.label :name %>
+<%= f.text_field :name%>
+```
+は  
+```html
+<label for="user_name">Name</label>
+<input id="user_name" name="user[name]" type="text" />
+```
+を生成し、
+```erb
+<%= f.label :email %>
+<%= f.email_field :email %>
+```
+は  
+```html
+<label for="user_email">Email</label>
+<input id="user_email" name="user[email]" type="email" />
+```
+を生成する。  
+```erb
+<%= f.label :password %>
+<%= f.password_field :password %>
+```
+は  
+```html
+<label for="user_password">Password</label>
+<input id="user_password" name="user[password]" type="password" />
+```
+を生成する。  
+```type=```の部分に注目すると```f.text_field```では```type="text"```となり、通常のテキストフィールドを生成する。  
+```f.password_field```では```type="password"```となり、入力文字が隠されたテキストフィールドとなる  
+```f.email_field```の```type="email"```は一見通常のテキストフィールドと変わらないように見えるが、モバイル環境ではメールアドレス入力に適したキーボードが出るようになる。  
+  
+さらに、SCSSでフォームの整形をしておく  
+```scss
+.
+.
+.
+/* forms */
+input, textarea, select, .uneditable-input {
+  border: 1px solid #bbb;
+  width: 100%;
+  margin-bottom: 15px;
+  @include box_sizing;
+}
+input {
+  height: auto !important;
+}
+```
+
