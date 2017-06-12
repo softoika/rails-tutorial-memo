@@ -244,15 +244,15 @@ app/views/users/new.html.erb
 <div class="row">
   <div class="col-md-6 col-md-offset-3">
     <%= form_for(@user) do |f| %>
-      <%= f.label :name %>
-      <%= f.text_field :name %>
-<%= f.label :email %>
-      <%= f.email_field :email %>
-<%= f.label :password %>
-      <%= f.password_field :password %>
-<%= f.label :password_confirmation, "Confirmation" %>
-      <%= f.password_field :password_confirmation %>
-<%= f.submit "Create my account", class: "btn btn-primary" %>
+    <%= f.label :name %>
+    <%= f.text_field :name %>
+    <%= f.label :email %>
+    <%= f.email_field :email %>
+    <%= f.label :password %>
+    <%= f.password_field :password %>
+    <%= f.label :password_confirmation, "Confirmation" %>
+    <%= f.password_field :password_confirmation %>
+    <%= f.submit "Create my account", class: "btn btn-primary" %>
     <% end %>
   </div>
 </div>
@@ -313,5 +313,59 @@ input, textarea, select, .uneditable-input {
 input {
   height: auto !important;
 }
+```
+
+### 7.3 ユーザー登録失敗
+#### 7.3.1 正しいフォーム
+/usersへのPOSTリクエストはcreateアクションに送られる(routes.rbに```resources :users```を追加したため)
+createアクションでフォーム送信を受取り、User.newを使用してユーザオブジェクトを作成し、ユーザーを保存し、再度の送信用のユーザ登録ページを表示するという機能を作成する。  
+ユーザ登録フォームのソースを見てみる  
+```html
+<form action="/users" class="new_user" id="new_user" method="post">
+```
+```action="/users"```と```method="post"```でPOSTリクエストを/usersに送っている  
+まずはUsersControllerのcreateアクションに以下の変更を加える(※実装はまだ途中)  
+app/controllers/user_controller.rb
+```rb
+  def create
+    @user = User.new(params[:user])    # 実装は終わっていないことに注意!
+    if @user.save
+      # 保存の成功をここで扱う。
+    else
+      render 'new'
+    end
+  end
+```
+保存が成功したかどうかは@user.saveの戻り値(trueかfalse)で判定する  
+5章のパーシャルの説明でも使用したrenderメソッドを再度使いまわしている  
+この状態で無効なユーザデータでユーザ登録データを送信してみる。
+デバッグ情報には以下のようになっている  
+```
+{"utf8"=>"✓",
+ "authenticity_token"=>"Fz3IrSiR1RxnvCeBOPAfTnPUJESLKleVzyTODtAlerOzZ6ZEgapQDYGiAluDLkpHynmrkMUiMXm17DOseks/bw==",
+ "user"=>{"name"=>"Foo Bar", "email"=>"foo@invalid", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]"},
+ "commit"=>"Create my account"}
+```
+このうちパラメータハッシュのuserの部分を見てみる  
+```
+"user"=>{"name"=>"Foo Bar", "email"=>"foo@invalid", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]"}
+```
+この部分はUserコントローラにparamsとして渡される  
+フォーム送信の結果が送信された値に対応する属性とともにuserハッシュに格納される  
+このハッシュキーがinputタグにあったname属性になる  
+```html
+<input id="user_email" name="user[email]" type="email" />
+```
+```user[email]```という値はuserハッシュの:emailキーの値と一致する  
+ハッシュのキーはデバッグ情報では文字列となっているが、Railsは文字列ではなく、params[:user]のように「シンボル」としてUsersコントローラに渡している  
+この性質により、このハッシュはUser.newの引数で必要となるデータと完全に一致する  
+次のようなコード(マストアサインとよぶ)は  
+```rb
+@user = User.new(params[:user])
+```
+実際にはこのコードとほぼ同じ  
+```rb
+@user = User.new(name: "Foo Bar", email: "foo@invalid",
+                 password: "foo", password_confirmation: "bar")
 ```
 
