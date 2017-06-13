@@ -369,3 +369,45 @@ app/controllers/user_controller.rb
                  password: "foo", password_confirmation: "bar")
 ```
 
+#### 7.3.2 Strong Parameter
+下記のようにマスアサインメント(引数にハッシュを用いてメソッド呼び出し)を利用して簡単に設定可能だが  
+```rb
+@user = User.new(params[:user])
+```
+不正なリクエストによりparamsに想定外なカラムを指定していた場合、想定していないデータベースの更新をユーザに許すことになる。(例えば管理者権限のカラムが存在する場合など)  
+上記の```params[:user]```はparamsハッシュ全体で初期化していることになっている。  
+
+そういった脆弱性をマスアサインメント脆弱性という。  
+これの対策方法としてStrong Parameterというものがある。  
+Strong Parameterを用いることによって、必須のパラメータと許可されたパラメータを指定することができる。  
+  
+今回の場合```:user```を必須とし、名前、メールアドレス、パスワード、パスワードの確認の属性を必須としたい。  
+次のような記述による実現できる  
+```rb
+params.require(:user).permit(:name, :email, :password, :password_confirmation)
+```
+このコードの戻り値は、paramsハッシュのバージョンと、許可された属性です (:user属性がない場合はエラーになります)。  
+これらのパラメータを使いやすくするために、user_paramsという外部メソッドを用意して使用するのが慣習になっています。  
+app/controllers/user_controller.rb  
+```
+class UsersController < ApplicationController
+  .
+  .
+  .
+  def create
+    @user = User.new(user_params)
+    if @user.save
+      # 保存の成功をここで扱う。
+    else
+      render 'new'
+    end
+  end
+  private
+    def user_params
+        params.require(:user).permit(:name, :email, :password,
+                                   :password_confirmation)
+    end
+end
+```
+privateキーワード以降がprivateメソッドであることを強調するためにprivate以降のメソッドのインデントを１つ下げている  
+
