@@ -389,7 +389,7 @@ params.require(:user).permit(:name, :email, :password, :password_confirmation)
 このコードの戻り値は、paramsハッシュのバージョンと、許可された属性です (:user属性がない場合はエラーになります)。  
 これらのパラメータを使いやすくするために、user_paramsという外部メソッドを用意して使用するのが慣習になっています。  
 app/controllers/user_controller.rb  
-```
+```rb
 class UsersController < ApplicationController
   .
   .
@@ -410,4 +410,93 @@ class UsersController < ApplicationController
 end
 ```
 privateキーワード以降がprivateメソッドであることを強調するためにprivate以降のメソッドのインデントを１つ下げている  
+
+#### 7.3.3 エラーメッセージ
+有効でないユーザモデルを保存しようとするとエラーメッセージが文字列リストに格納される  
+app/models/user.rbにvalidatesを設定しているため。  
+```rb
+$ rails console
+>> user = User.new(name: "Foo Bar", email: "foo@invalid",
+?>                 password: "dude", password_confirmation: "dude")
+>> user.save
+=> false
+>> user.errors.full_messages
+=> ["Email is invalid", "Password is too short (minimum is 6 characters)"]
+```
+このメッセージをブラウザで表示するには、ユーザーのnewページでエラーメッセージのパーシャル (partial) を出力します。このとき、form-controlというCSSクラスも一緒に追加することで、Bootstrapがうまく取り扱ってくれるようになります  
+app/views/users/new.html.erb  
+```erb
+<% provide(:title, 'Sign up') %>
+<h1>Sign up</h1>
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_for(@user) do |f| %>
+     <%= render 'shared/error_messages' %>
+     <%= f.label :name %>
+      <%= f.text_field :name, class: 'form-control' %>
+     <%= f.label :email %>
+      <%= f.email_field :email, class: 'form-control' %>
+     <%= f.label :password %>
+      <%= f.password_field :password, class: 'form-control' %>
+     <%= f.label :password_confirmation, "Confirmation" %>
+      <%= f.password_field :password_confirmation, class: 'form-control' %>
+    <%= f.submit "Create my account", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+```
+’shared/error_messages’というパーシャルをrender (レンダリング) している点に注目してください。  
+複数のコントローラに渡るビューの場合、sharedディレクトリを使用する  
+```
+$ mkdir app/views/shared
+```
+app/views/shared/error_messages.html.erb  
+```erb
+<% if @user.errors.any? %>
+  <div id="error_explanation">
+    <div class="alert alert-danger">
+      The form contains <%= pluralize(@user.errors.count, "error") %>.
+    </div>
+    <ul>
+    <% @user.errors.full_messages.each do |msg| %>
+      <li><%= msg %></li>
+    <% end %>
+    </ul>
+  </div>
+<% end %>
+```
+any?メソッドはempty?メソッドと互いに補完し合う  
+１つでも存在すればtrueとなる  
+pluralizeという英語テキスト専用ヘルパーメソッドを使用している  
+```rb
+>> helper.pluralize(1, "error")
+=> "1 error"
+>> helper.pluralize(5, "error")
+=> "5 errors"
+```
+また、エラーメッセージにスタイルを与えるためのCSS id error_explanationも含まれていることに注目してください  
+さらに、Railsは無効な内容が送信されて元のページに戻されるとdivで囲まれたエラー用cssクラス、field_with_errorsを返す  
+```scss
+.
+.
+.
+/* forms */
+.
+.
+.
+#error_explanation {
+  color: red;
+  ul {
+    color: red;
+    margin: 0 0 30px 0;
+  }
+}
+.field_with_errors {
+  @extend .has-error;
+  .form-control {
+    color: $state-danger-text;
+  }
+}
+```
+ここでは@extend関数を使ってBootstrapのhas-errorというCSSクラスを適用している  
 
