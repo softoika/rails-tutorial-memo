@@ -500,3 +500,50 @@ pluralizeという英語テキスト専用ヘルパーメソッドを使用し�
 ```
 ここでは@extend関数を使ってBootstrapのhas-errorというCSSクラスを適用している  
 
+#### 7.3.4 失敗時のテスト  
+Railsはフォーム用のテストを書くことができ、それを自動化できる  
+まずは新規登録用の統合テストを書く  
+```
+rails generate integration_test users_signup
+```
+リソース名は複数形で書く慣習があるのでusers_signupとしている。  
+このテストでは無効なユーザ情報で登録ボタンを押したときにユーザが作成されないことを検証する  
+確かめる方法としてcountメソッドを用いる  
+```
+$ rails console
+>> User.count
+=> 1
+```
+まずは、getメソッドを使ってsignupページにアクセスできるか確かめる  
+次にassert_selectメソッドを用いてHTML要素を検証する  
+ただ、フォーム送信をテストするためにはusers_pathに対してPOSTリスエストを送る必要がある  
+次のようにpost関数を使って実現する  
+```rb
+assert_no_difference 'User.count' do
+  post users_path, params: {user: {name: "",
+    email: "user@invalid",
+    password: "foo",
+    password_confirmation: "bar"}}
+end
+```
+createアクションのUser.newで期待されるデータをparams[:user]というハッシュにまとめている  
+assert_no_differenceメソッドのブロック内でpostを使い、メソッドの引数に'User.count'と書いている  
+これはブロック内を実行する前後でUser.countの値が変わらないことを確かめている  
+最終的にこのテストは次のコードになる  
+test/integration/users_signup_test.rb  
+```rb
+require 'test_helper'
+class UsersSignupTest < ActionDispatch::IntegrationTest
+  test "invalid signup information" do
+    get signup_path
+    assert_no_difference 'User.count' do
+      post users_path, params: { user: { name:  "",
+                                         email: "user@invalid",
+                                         password:              "foo",
+                                         password_confirmation: "bar" } }
+    end
+    assert_template 'users/new'
+  end
+end
+```
+送信に失敗したときにnewアクションが再描画されるはずなので、assert_templateメソッドを使ったテストも含まれている(assert_templateはページの表示をテストする)  
