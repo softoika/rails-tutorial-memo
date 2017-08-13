@@ -547,3 +547,107 @@ class UsersSignupTest < ActionDispatch::IntegrationTest
 end
 ```
 送信に失敗したときにnewアクションが再描画されるはずなので、assert_templateメソッドを使ったテストも含まれている(assert_templateはページの表示をテストする)  
+  
+### 7.4 ユーザ登録成功  
+新規登録ユーザをデータベースに登録できるようにする  
+→ユーザプロフィールの表示  
+#### 7.4.1 登録フォームの完成  
+現状では正しいユーザ情報を入力してもエラーが発生する  
+createアクションに対するビューのテンプレートが存在しないため。  
+テンプレートを作成する以外の方法で、別ページにリダイレクトするという選択肢もある(Railsではこっちの方が一般的)  
+  
+保存とリダイレクトを行うuserのcreateアクション  
+app/controllers/users_controller.rb
+```rb
+class UsersController < ApplicationController
+  .
+  .
+  .
+  def create
+    @user = User.new(user_params)
+    if @user.save
+      redirect_to @user
+    else
+      render 'new'
+    end
+  end
+private
+def user_params
+  .
+  .
+  .
+```
+redirect_to @userという一文は```redirect_to user_url(@user)```に等しい
+
+user_urlは5章で登場した名前付きルートの書き方である
+
+この場合user_urlは/users/[ユーザID]のURLを返す。
+
+参考：[_pathメソッドと_urlメソッドの使い分け](http://qiita.com/higeaaa/items/df8feaa5b6f12e13fb6f)  
+  
+#### 7.4.2 flash  
+登録時にリダイレクトしたプロフィールページにはウェルカムメッセージを表示し、以降のプロフィールページへのアクセス時には表示をしない  
+railsではflashという特殊な変数を用いて実現する  
+app/controllers/users_controller.rb
+```rb
+class UsersController < ApplicationController
+  .
+  .
+  .
+  def create
+    @user = User.new(user_params)
+    if @user.save
+        flash[:success] = "Welcome to the Sample App!"
+      redirect_to @user
+    else
+      render 'new'
+    end
+  end
+  .
+  .
+  .
+```  
+この変数はハッシュのように扱い、railsの慣習に習って:successというキーに成功メッセージを代入している  
+  
+今回はflashに登録してあるキーを全て調べ表示するようにしてみる  
+ビューにはこのように書く  
+```erb
+<% flash.each do |message_type, message| %>
+  <div class="alert alert-<%= message_type %>"><%= message %></div>
+<% end %>
+```
+erbとhtmlの書き方が混ざっているがそれを改善することも可能(後述)  
+alert-<%=message_type%>というクラスがあるが、埋め込み部分にはflashのキーが入るのでalert-successなどのクラスが指定される  
+なお、Bootstrap CSSではflashのクラス用に4つのスタイル(success, danger, info, warning)を持っている  
+上記のerbから、　　
+```rb
+flash[:success] = "Welcome to the sample App!"
+```
+このコードは　　
+```html
+<div class="alert alert-success">Welcome to the sample App!</div>
+```
+となる。最終的な埋め込みRubyのレイアウトはこのようになる  
+app/view/layouts/application.html.erb  
+```erb
+<!DOCTYPE html>
+<html>
+  .
+  .
+  .
+  <body>
+    <%= render 'layouts/header' %>
+    <div class="container">
+      <% flash.each do |message_type, message| %>
+        <div class="alert alert-<%= message_type %>"><%= message %></div>
+      <% end %>
+      <%= yield %>
+      <%= render 'layouts/footer' %>
+      <%= debug(params) if Rails.env.development? %>
+    </div>
+    .
+    .
+    .
+  </body>
+</html>
+```
