@@ -713,3 +713,71 @@ app/views/layouts/application.html.erb
       .
 </html>
 ```
+  
+### 7.5 プロのデプロイ  
+下準備にこれまでの変更をmasterブランチにマージしておく  
+```
+$ git add -A
+$ git commit -m "Finish user signup"
+$ git checkout master
+$ git merge sign-up
+```
+#### 7.5.1 本番環境でのSSL
+本番環境ではフォーム送信をネットワーク越しに流すことになり、これらのデータは途中で補足できてしまうというセキュリティ上の欠陥がある。  
+これを修正するためにSecure Socket Layer(SSL)を使う。  
+これはローカルのサーバからネットワークに流れる前に大事な情報を暗号化する技術  
+  
+SSLを有効化するにはproduction.rbという本番環境用の設定ファイルの１行を修正するだけで済む  
+config/environments/production.rb  
+```rb
+Rails.application.configure do
+  .
+  .
+  .
+  # Force all access to the app over SSL, use Strict-Transport-Security,
+  # and use secure cookies.
+  config.force_ssl = true
+  .
+  .
+  .
+end
+```
+本番用のWebサイトでSSLを有効にするためにはSSL証明書をドメインごとに購入する必要がある  
+ただし、Heroku上でアプリケーションを動かしHerokuのSSL証明書に便乗する方法だと購入する必要はない  
+  
+#### 7.5.2 本番環境用のWebサーバ  
+HerokuではデフォルトではWeBrickというサーバを使っている(セットアップが簡単だが多くのトラフィックに弱い)  
+今回はPumaを使う  
+基本的に[HerokuのPumaドキュメント](https://devcenter.heroku.com/articles/deploying-rails-applications-with-the-puma-web-server)に従って設定していけば良い  
+ドキュメントの通りに以下の変更を加える  
+config/puma.rb  
+```rb
+workers Integer(ENV['WEB_CONCURRENCY'] || 2)
+threads_count = Integer(ENV['RAILS_MAX_THREADS'] || 5)
+threads threads_count, threads_count
+preload_app!
+rackup      DefaultRackup
+port        ENV['PORT']     || 3000
+environment ENV['RACK_ENV'] || 'development'
+on_worker_boot do
+  # Worker specific setup for Rails 4.1+
+  # See: https://devcenter.heroku.com/articles/
+  # deploying-rails-applications-with-the-puma-web-server#on-worker-boot
+  ActiveRecord::Base.establish_connection
+end
+```
+最後にProcfileと呼ばれるHeroku上でPumaのプロセスを走らせる設定ファイルを作成する  
+./Procfile  
+```
+web: bundle exec puma -C config/puma.rb
+```
+  
+#### 7.5.3 本番環境へのデプロイ  
+```
+$ rails test
+$ git add -A
+$ git commit -m "Use SSL and the Puma webserver in production"
+$ git push
+$ git push heroku
+$ heroku run rails db:migrate
+```
