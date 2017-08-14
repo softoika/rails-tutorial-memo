@@ -651,3 +651,65 @@ app/view/layouts/application.html.erb
   </body>
 </html>
 ```
+  
+#### 7.4.3 実際のユーザ登録  
+次のコマンドで一旦データベースをリセットする  
+```
+$ rails db:migrate:reset
+```
+次に最初のユーザ登録をしてみる  
+Name: Rails Tutorial  
+Email: example@railstutorial.org  
+登録すると7.4.2で用意したメッセージが表示される。ページを更新されるとメッセージは消える  
+
+#### 7.4.4 成功時のテスト  
+有効な送信に対するテストを書く  
+今回は有効な送信をして、ユーザ数が変更された(増えた)ことを確認するテストを書く  
+よってassert_differenceというメソッドを使って書く  
+```
+assert_difference 'User.count', 1 do
+  post users_path, …
+end
+```
+assert_no_differenceと同様に第一引数には'User.count'の文字列で書かれたメソッド呼び出し、そして第二引数には比較した結果の差異が入る  
+最終的に次のテストを実装する  
+test/integration/users_signup_test.rb
+```rb
+require 'test_helper'
+class UsersSignupTest < ActionDispatch::IntegrationTest
+  .
+  .
+  .
+  test "valid signup information" do
+    get signup_path
+    assert_difference 'User.count', 1 do
+      post users_path, params: { user: { name:  "Example User",
+                                         email: "user@example.com",
+                                         password:              "password",
+                                         password_confirmation: "password" } }
+    end
+    follow_redirect!
+    assert_template 'users/show'
+  end
+end
+```
+postリクエストの後にfollow_redirect!というメソッドを呼び出している  
+これはpostリクエストを送信した結果を見て指定されたリダイレクト先に移動するメソッド  
+したがってこの直後ではusers/showが表示されているはず。asset_templateでそれをテストしている。  
+  
+content_tagを用いてレイアウトの中にflashを埋め込む  
+app/views/layouts/application.html.erb
+```erb
+<!DOCTYPE html>
+<html>
+      .
+      .
+      .
+      <% flash.each do |message_type, message| %>
+        <%= content_tag(:div, message, class: "alert alert-#{message_type}") %>
+      <% end %>
+      .
+      .
+      .
+</html>
+```
